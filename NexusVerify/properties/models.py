@@ -62,3 +62,30 @@ class Property(models.Model):
 
     def __str__(self):
         return self.title
+    
+class AuditTransaction(models.Model):
+    AUDIT_DECISION_CHOICES = [
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name="audits"
+    )
+
+    auditor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="audits"
+    )
+
+    audited_price = models.DecimalField(max_digits=12, decimal_places=2)
+    decision = models.CharField(max_length=20, choices=AUDIT_DECISION_CHOICES)
+    comment = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)

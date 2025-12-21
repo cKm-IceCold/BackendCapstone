@@ -1,10 +1,18 @@
-def create_property(user, validated_data):
-    validated_data["registered_by"] = user
-    return Property.objects.create(**validated_data)
+# services.py
+from .models import AuditTransaction, Property
 
+def audit_property(auditor, property_obj, audited_price, decision, comment=""):
+    audit = AuditTransaction.objects.create(
+        property=property_obj,
+        auditor=auditor,
+        audited_price=audited_price,
+        decision=decision,
+        comment=comment
+    )
 
-def update_property(property_obj, validated_data):
-    for field, value in validated_data.items():
-        setattr(property_obj, field, value)
+    # Update property fields based on audit
+    property_obj.price_audit_value = audited_price
+    property_obj.verification_status = "verified" if decision == "approve" else "rejected"
     property_obj.save()
-    return property_obj
+
+    return audit
