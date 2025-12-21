@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
 
 class Property(models.Model):
@@ -85,3 +86,22 @@ class AuditTransaction(models.Model):
 
     def __str__(self):
         return f"Audit {self.id} for {self.property_obj.title}"
+
+
+
+class PropertyDocument(models.Model):
+    property_obj = models.ForeignKey(
+        'Property',
+        on_delete=models.CASCADE,
+        related_name='documents'
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    document = models.FileField(upload_to='property_documents/')
+    description = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.property_obj.title} - {self.document.name}"

@@ -15,3 +15,7 @@ class IsAuditor(BasePermission):
             request.user.is_authenticated
             and request.user.groups.filter(name="Auditor").exists()
         )
+
+class IsCompanyOwnerDocument(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.property_obj.registered_by == request.user
