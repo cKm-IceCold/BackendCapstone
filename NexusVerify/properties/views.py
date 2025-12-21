@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, filters, status
+from rest_framework import status, viewsets, filters
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
@@ -7,7 +7,8 @@ from rest_framework.response import Response
 from .models import Property, AuditTransaction
 from .serializers import PropertySerializer, AuditTransactionSerializer
 from .permissions import IsCompanyOwner, IsAuditor
-from .services import audit_property  # Function to handle audit logic
+from .services import audit_property  # We'll define this next
+
 
 
 class PropertyViewSet(ModelViewSet):
@@ -37,7 +38,6 @@ class PropertyAuditViewSet(ModelViewSet):
         serializer = AuditTransactionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Service function handles audit creation and property updates
         audit = audit_property(
             auditor=request.user,
             property_obj=property_obj,
@@ -57,7 +57,4 @@ class PropertyAuditViewSet(ModelViewSet):
         property_obj.verification_status = "unverified"
         property_obj.price_audit_value = None
         property_obj.save()
-        return Response(
-            {"message": "Property verification reset successfully."},
-            status=status.HTTP_200_OK
-        )
+        return Response({"detail": "Verification reset successfully"}, status=status.HTTP_200_OK)
