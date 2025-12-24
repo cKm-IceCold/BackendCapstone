@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Properties</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'property_add' %}" class="btn btn-success">Add Property</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" name="q" class="form-control" placeholder="Search by location or title..."
+                    value="{{ request.GET.q|default:'' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    {% for property in properties %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ property.title }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ property.location }}</h6>
+                <p class="card-text">
+                    <strong>ID:</strong> {{ property.property_id }}<br>
+                    <strong>Price:</strong> {% if property.price_audit_value %}{{ property.price_audit_value }}{% else
+                    %}Not audited{% endif %}<br>
+                    <strong>Status:</strong>
+                    <span
+                        class="badge bg-{% if property.verification_status == 'VERIFIED' %}success{% elif property.verification_status == 'REJECTED' %}danger{% else %}warning{% endif %}">
+                        {{ property.verification_status }}
+                    </span>
+                    <br>
+                    <strong>Zoning:</strong> {{ property.zoning_status }}
+                    {% if property.document %}
+                    <br>
+                    <strong>Document:</strong> <a href="{{ property.document.url }}">View</a>
+                    {% endif %}
+                    {% if property.image %}
+                        <br>
+                        <img src="{{ property.image.url }}" class="img-fluid mt-2" alt="{{ property.title }}">
+                    {% endif %}
+                </p>
+                {% if property.registered_by == user or user.role == 'AUDITOR' %}
+                <a href="{% url 'property_edit' property.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                {% endif %}
+                {% if property.registered_by == user %}
+                <a href="{% url 'property_delete' property.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                {% endif %}
+            </div>
+            <div class="card-footer text-muted">
+                Registered by {{ property.registered_by.username }}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">No properties found.</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
