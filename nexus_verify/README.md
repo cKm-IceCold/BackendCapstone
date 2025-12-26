@@ -83,6 +83,7 @@ The project is structured into two main components to ensure scalability and sep
 ### API Access (Mobile/External Integration)
 - **Root Endpoint**: `/api/`
 - **Auth Token**: `POST /api/token/` with username and password to receive an auth token.
+- **My Profile**: `/api/users/me/` - Returns the authenticated user's details and role.
 - **Properties**: `/api/properties/`
 - **Verification**: `/api/properties/{id}/verify/` (Auditors only)
 
