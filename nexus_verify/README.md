@@ -9,52 +9,70 @@ The platform acts as a secure intermediary layer, ensuring that all property doc
 ## 🛠️ Key Features
 
 ### 1. Digital Document Registry
-- **Hash-Based Verification**: Real estate companies submit property documents, which are assigned unique identifiers (UUIDs/Hashes) to create a traceable digital ledger.
-- **Visual Evidence**: Users can now upload and view multiple pictures of the property.
-- **Immutability**: Once registered, document details provide a secure record for verification.
+- **Property Registration**: Real Estate Companies and registered users can submit property details including title, location, and owner name.
+- **Document & Image Upload**: Supports uploading a property document (file) and a property image to provide visual evidence.
+- **Tracking**: Each property is assigned a unique `property_id` for easy tracking.
 
 ### 2. Role-Based Access Control (RBAC)
+The system employs a custom User model with specific roles:
 - **Customer**: Can browse and search for verified properties.
 - **Real Estate Company**: Can register properties and upload supporting documents.
 - **Auditor**: Independent professionals who review submissions, verify zoning, and assign the final "Audited Price".
 
 ### 3. Audited Pricing Workflow
-- Sellers do not set the final price.
-- **Workflow**: Company submits listing -> Auditor reviews -> Auditor signs off on the market valuation -> Listing becomes public.
+- Sellers do not set the final displayed price.
+- **Workflow**: 
+  1. Property is registered (Default status: `PENDING`).
+  2. Auditor reviews the submission via the API.
+  3. Auditor verifies the property, sets the `price_audit_value`, and updates status to `VERIFIED` (or `REJECTED`).
+  4. An `AuditTransaction` record is created to log the auditor's action.
 
 ### 4. Government Zone Verification
-- Every listing includes a status badge confirming the property is in a legal, allocated area, reducing the risk of future government demolitions.
+- Properties include a `zoning_status` and `fraud_risk_level` (e.g., Low, Medium, High).
+- These details are input during registration and verified by Auditors to ensure compliance with government regulations.
 
 ### 5. Advanced Search & Filtering
-- Filter properties by location, title, audited price range, and verification status.
+- **Frontend**: Search properties by location or title.
+- **API**: Advanced filtering by:
+    - Location
+    - Verification Status (`PENDING`, `VERIFIED`, `REJECTED`)
+    - Fraud Risk Level
+    - Zoning Status
+    - Price Range (`min_price`, `max_price`)
 
 ## 🏗️ Architecture
 
-The project is structured into two main components to ensure scalability and separation of concerns:
+The project is structured into two main components:
 
-- **`api/` (Backend JSON API)**: Built with Django REST Framework. Handles the core business logic, data models, and provides endpoints for mobile or external integrations.
-- **`frontend/` (Web Portal)**: Built with standard Django Templates and Bootstrap for a fast, server-side rendered user experience.
-- **`nexus_verify/`**: Project configuration and settings.
+- **`api/` (Backend JSON API)**: 
+    - Built with Django REST Framework.
+    - Handles core business logic, data models (`User`, `Property`, `AuditTransaction`), and permissions.
+    - Exposes endpoints for identifying users, managing properties, and performing audits.
+- **`frontend/` (Web Portal)**: 
+    - Built with standard Django Templates and Bootstrap.
+    - Provides a server-side rendered interface for User Registration, Login, and Property CRUD operations.
+- **`nexus_verify/`**: 
+    - Project configuration, settings, and URL routing.
 
 ## 🧰 Tech Stack
-- **Framework**: Django 5.2.7
+- **Framework**: Django 5.x
 - **API**: Django REST Framework (DRF)
-- **Database**: SQLite (Default, easily switchable to PostgreSQL)
-- **Frontend**: Django Templates with Bootstrap
-- **CORS**: `django-cors-headers` enabled for cross-origin frontend systems
-- **Authentication**: Supports both Session and Token Authentication
+- **Database**: SQLite (Default)
+- **Frontend**: Django Templates, Bootstrap
+- **Authentication**: Session Auth (Frontend) & Token Auth (API)
 
 ## 📥 Installation & Setup
 
-1. **Clone the repository** (if applicable) or navigate to the project directory:
+1. **Navigate to the project directory**:
    ```bash
    cd nexus_verify
    ```
 
 2. **Install Dependencies**:
    ```bash
-   pip install django djangorestframework django-cors-headers
+   pip install django djangorestframework django-cors-headers pillow
    ```
+   *(Note: `pillow` is required for ImageField)*
 
 3. **Apply Migrations**:
    ```bash
@@ -74,20 +92,26 @@ The project is structured into two main components to ensure scalability and sep
 
 ## 📖 Usage Guide
 
-### Browser Access (Frontend Portal)
-- **Registration**: Visit `/register/` to create an account. Choose your role carefully.
-- **Login/Logout**: Accessible via navigation or `/login/`.
-- **Properties**: Visit the root `/` to view all properties.
-- **Management**: Registered users with the correct role can add, edit, or delete properties from the portal.
+### Frontend Portal
+- **Register**: `/register/` - Create an account as Customer, Real Estate Company, or Auditor.
+- **Login**: `/login/`
+- **Properties**: `/` - View all properties. Authenticated users can create new listings.
+- **Management**: Edit or delete properties you created.
 
-### API Access (Mobile/External Integration)
-- **Root Endpoint**: `/api/`
-- **Auth Token**: `POST /api/token/` with username and password to receive an auth token.
-- **My Profile**: `/api/users/me/` - Returns the authenticated user's details and role.
-- **Properties**: `/api/properties/`
-- **Verification**: `/api/properties/{id}/verify/` (Auditors only)
+### API Access
+- **Base URL**: `/api/`
+- **Authentication**: `POST /api/token/` (if configured) or Session Auth.
+- **Current User**: `GET /api/users/me/`
+- **Properties**: 
+    - `GET /api/properties/` - List all properties (supports query params for filtering).
+    - `POST /api/properties/` - Create a new property.
+- **Auditing (Auditors Only)**:
+    - `POST /api/properties/{id}/verify/`
+      - Body: `{"status": "VERIFIED", "price_audit_value": 500000, "notes": "All documents valid."}`
+    - `POST /api/properties/{id}/reset_verification/`
 
-## 🔐 Security & Configuration
-- **CORS**: Configured to allow cross-origin requests (`CORS_ALLOW_ALL_ORIGINS = True` in development).
-- **Permissions**: Every endpoint is protected by DRF permissions (`IsAuthenticated`, `IsAuditor`, etc.).
-- **Media**: Property documents are stored in the `/media/` directory.
+## 🔐 Security & Permissions
+- **IsAuthenticated**: Required for most write operations.
+- **IsAuditor**: Custom permission required for verifying properties.
+- **IsRealEstateCompany**: Permission class available for future restrictions.
+- **Object Permissions**: Users can only edit/delete properties they registered (unless they are superusers/auditors depending on specific view logic).
