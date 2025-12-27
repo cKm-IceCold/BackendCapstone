@@ -22,6 +22,27 @@ class UserViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+    @action(detail=False, methods=['post'])
+    def social_login(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user, created = User.objects.get_or_create(email=email, defaults={
+            'username': email.split('@')[0],
+            'role': 'CUSTOMER'
+        })
+        
+        from rest_framework.authtoken.models import Token
+        token, _ = Token.objects.get_or_create(user=user)
+        
+        return Response({
+            'token': token.key,
+            'role': user.role,
+            'email': user.email,
+            'username': user.username
+        })
+
     @action(detail=False, methods=['get'])
     def me(self, request):
         serializer = self.get_serializer(request.user)
