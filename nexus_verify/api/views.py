@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import User, Property, AuditTransaction
 from .serializers import UserSerializer, PropertySerializer, AuditTransactionSerializer
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+
+
 
 class IsAuditor(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -121,3 +125,21 @@ class PropertyViewSet(viewsets.ModelViewSet):
         property_obj.save()
         
         return Response({'status': 'Verification reset'}, status=status.HTTP_200_OK)
+
+# Inside UserViewSet
+@action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+def login(self, request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+
+    # Since we set USERNAME_FIELD = 'email', authenticate looks for email in the username slot
+    user = authenticate(username=email, password=password)
+
+    if user:
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
+    
+    return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)

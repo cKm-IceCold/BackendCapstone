@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
+    # Make email unique and required
+    email = models.EmailField(unique=True) 
+    
     ROLE_CHOICES = (
         ('CUSTOMER', 'Customer'),
         ('REAL_ESTATE_COMPANY', 'Real Estate Company'),
@@ -9,6 +12,12 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='CUSTOMER')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # ADD THESE TWO LINES:
+    USERNAME_FIELD = 'email'      # This makes email the unique identifier for login
+    REQUIRED_FIELDS = ['username'] # username is still required for createsuperuser
+
+ 
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
