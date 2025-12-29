@@ -51,6 +51,24 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+    
+        # Inside UserViewSet
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def login(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        # Since we set USERNAME_FIELD = 'email', authenticate looks for email in the username slot
+        user = authenticate(username=email, password=password)
+
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({
+                'token': token.key,
+                'user': UserSerializer(user).data
+            }, status=status.HTTP_200_OK)
+        
+        return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all()
@@ -126,20 +144,3 @@ class PropertyViewSet(viewsets.ModelViewSet):
         
         return Response({'status': 'Verification reset'}, status=status.HTTP_200_OK)
 
-# Inside UserViewSet
-@action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
-def login(self, request):
-    email = request.data.get('email')
-    password = request.data.get('password')
-
-    # Since we set USERNAME_FIELD = 'email', authenticate looks for email in the username slot
-    user = authenticate(username=email, password=password)
-
-    if user:
-        token, _ = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': UserSerializer(user).data
-        }, status=status.HTTP_200_OK)
-    
-    return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
