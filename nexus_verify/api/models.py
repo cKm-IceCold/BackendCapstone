@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
+    username = models.CharField(max_length=150, unique=False, blank=True, null=True)
     # Make email unique and required
     email = models.EmailField(unique=True) 
     
@@ -20,7 +21,7 @@ class User(AbstractUser):
  
 
     def __str__(self):
-        return f"{self.username} ({self.get_role_display()})"
+        return f"{self.email} ({self.get_role_display()})"
 
 class Property(models.Model):
     VERIFICATION_STATUS_CHOICES = (
