@@ -9,5 +9,5 @@ router.register(r'properties', PropertyViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('token/', obtain_auth_token, name='api_token_auth'),
+   
 ]
